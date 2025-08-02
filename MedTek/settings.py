@@ -25,8 +25,9 @@ SECRET_KEY = os.getenv('SECRET_KEY','django-insecure-8s%zelz*o7y&f93zixzg!!h)i9b
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost').split(',')
+# You can also make this dynamic for a production-ready setup
+# ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost').split(',')
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
