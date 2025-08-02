@@ -2,17 +2,17 @@
 {% load crispy_forms_tags %}
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card my-5">
-            <div class="card-header text-center">
-                <h3>OTP Verification</h3>
+    <div class="col-md-6 col-lg-5">
+        <div class="card mt-5">
+            <div class="card-header text-center py-4">
+                <h3 class="mb-0">OTP Verification</h3>
             </div>
-            <div class="card-body">
-                <p>An OTP has been sent to your email. Please check your inbox.</p>
-                <form method="post">
+            <div class="card-body p-4">
+                <p class="text-center text-muted">An OTP has been sent to your email. Please check your inbox.</p>
+                <form method="post" novalidate>
                     {% csrf_token %}
                     {{ form|crispy }}
-                    <button type="submit" class="btn btn-success btn-block mt-3">Verify OTP</button>
+                    <button type="submit" class="btn btn-success btn-block w-100 mt-4">Verify OTP</button>
                 </form>
             </div>
         </div>

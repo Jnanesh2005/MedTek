@@ -2,46 +2,56 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-10">
-        <div class="card my-5">
-            <div class="card-header text-center">
-                <h3>Welcome, {{ profile.name }}!</h3>
-            </div>
+        <div class="card my-5 p-4">
             <div class="card-body">
-                <div class="row">
+                <h3 class="mb-4">Welcome, {{ profile.name }}!</h3>
+                <div class="row g-4">
                     <div class="col-md-6">
-                        <h4>Your Profile</h4>
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item"><strong>Age:</strong> {{ profile.age }}</li>
-                            <li class="list-group-item"><strong>Gender:</strong> {{ profile.get_gender_display }}</li>
-                            <li class="list-group-item"><strong>School:</strong> {{ profile.school_name }}</li>
-                            <li class="list-group-item"><strong>Height:</strong> {{ profile.height }} cm</li>
-                            <li class="list-group-item"><strong>Weight:</strong> {{ profile.weight }} kg</li>
-                            <li class="list-group-item"><strong>Pre-existing Diseases:</strong> {{ profile.pre_existing_diseases|default:"None" }}</li>
-                            <li class="list-group-item"><strong>Contact:</strong> {{ profile.contact_number }}</li>
-                            <li class="list-group-item"><strong>Email:</strong> {{ profile.email }}</li>
-                        </ul>
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fas fa-user-circle me-2"></i>Your Profile</h5>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item"><strong>Age:</strong> {{ profile.age }}</li>
+                                    <li class="list-group-item"><strong>Gender:</strong> {{ profile.get_gender_display }}</li>
+                                    <li class="list-group-item"><strong>School:</strong> {{ profile.school_name }}</li>
+                                    <li class="list-group-item"><strong>Height:</strong> {{ profile.height }} cm</li>
+                                    <li class="list-group-item"><strong>Weight:</strong> {{ profile.weight }} kg</li>
+                                    <li class="list-group-item"><strong>Pre-existing Diseases:</strong> {{ profile.pre_existing_diseases|default:"None" }}</li>
+                                    <li class="list-group-item"><strong>Contact:</strong> {{ profile.contact_number }}</li>
+                                    <li class="list-group-item"><strong>Email:</strong> {{ profile.email }}</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        <h4>Latest Vitals Submission</h4>
-                        {% if latest_vitals %}
-                            <ul class="list-group list-group-flush">
-                                <li class="list-group-item"><strong>Heart Rate:</strong> {{ latest_vitals.heart_rate }} bpm</li>
-                                <li class="list-group-item"><strong>SpO₂:</strong> {{ latest_vitals.spo2 }}%</li>
-                                <li class="list-group-item"><strong>Temperature:</strong> {{ latest_vitals.temperature }} °F</li>
-                                <li class="list-group-item"><strong>Respiration Rate:</strong> {{ latest_vitals.respiration_rate|default:"N/A" }}</li>
-                                <li class="list-group-item"><strong>Submission Date:</strong> {{ latest_vitals.submission_date|date:"F d, Y P" }}</li>
-                                <li class="list-group-item">
-                                    <strong>Health Status:</strong> 
-                                    <span class="badge badge-pill {% if latest_vitals.health_status == 'Healthy' %}badge-success{% else %}badge-danger{% endif %}">
-                                        {{ latest_vitals.health_status }}
-                                    </span>
-                                </li>
-                            </ul>
-                        {% else %}
-                            <p>No vitals submitted yet. Please submit your daily vitals.</p>
-                        {% endif %}
-                        <div class="mt-4">
-                            <a href="{% url 'submit_vitals' %}" class="btn btn-primary btn-block">Submit Vitals</a>
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Latest Vitals Submission</h5>
+                            </div>
+                            <div class="card-body">
+                                {% if latest_vitals %}
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item"><strong>Heart Rate:</strong> {{ latest_vitals.heart_rate }} bpm</li>
+                                        <li class="list-group-item"><strong>SpO₂:</strong> {{ latest_vitals.spo2 }}%</li>
+                                        <li class="list-group-item"><strong>Temperature:</strong> {{ latest_vitals.temperature }} °F</li>
+                                        <li class="list-group-item"><strong>Respiration Rate:</strong> {{ latest_vitals.respiration_rate|default:"N/A" }}</li>
+                                        <li class="list-group-item"><strong>Submission Date:</strong> {{ latest_vitals.submission_date|date:"F d, Y P" }}</li>
+                                        <li class="list-group-item">
+                                            <strong>Health Status:</strong>
+                                            <span class="badge rounded-pill bg-{% if latest_vitals.health_status == 'Healthy' %}success{% else %}danger{% endif %}">
+                                                {{ latest_vitals.health_status }}
+                                            </span>
+                                        </li>
+                                    </ul>
+                                {% else %}
+                                    <p class="text-muted text-center mt-3">No vitals submitted yet.</p>
+                                {% endif %}
+                                <div class="mt-4 text-center">
+                                    <a href="{% url 'submit_vitals' %}" class="btn btn-primary btn-hover-effect">Submit Vitals</a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -2,24 +2,33 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-6">
-        <div class="card my-5 text-center">
-            <div class="card-header">
-                <h3>Health Status Report</h3>
+        <div class="card mt-5 p-4 text-center">
+            <div class="card-header py-3">
+                <h3 class="mb-0">Health Status Report</h3>
             </div>
             <div class="card-body">
                 {% if vitals.health_status == 'Healthy' %}
-                    <h4 class="text-success">You seem healthy!</h4>
-                    <p>Your vitals are within the normal range. Keep up the good work!</p>
+                    <h4 class="text-success my-3">You seem healthy! <i class="fas fa-check-circle"></i></h4>
+                    <p class="text-muted">Your vitals are within the normal range. Keep up the good work!</p>
                 {% else %}
-                    <h4 class="text-danger">Possible signs of infection.</h4>
-                    <p>Your vitals are outside the healthy range. Please consult the school medical staff immediately.</p>
+                    <h4 class="text-danger my-3">Possible signs of infection. <i class="fas fa-exclamation-triangle"></i></h4>
+                    <p class="text-muted">Your vitals are outside the healthy range. Please consult the school medical staff immediately.</p>
                 {% endif %}
                 <hr>
-                <p><strong>Your Submission Details:</strong></p>
-                <p>Heart Rate: {{ vitals.heart_rate }} bpm</p>
-                <p>SpO₂: {{ vitals.spo2 }}%</p>
-                <p>Temperature: {{ vitals.temperature }} °F</p>
-                <a href="{% url 'dashboard' %}" class="btn btn-primary mt-3">Go to Dashboard</a>
+                <p class="mb-1"><strong>Submission Details:</strong></p>
+                <p class="text-muted small mb-0">{{ vitals.submission_date|date:"F d, Y P" }}</p>
+                <ul class="list-group list-group-flush text-start mt-3">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Heart Rate: <span>{{ vitals.heart_rate }} bpm</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        SpO₂: <span>{{ vitals.spo2 }}%</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Temperature: <span>{{ vitals.temperature }} °F</span>
+                    </li>
+                </ul>
+                <a href="{% url 'dashboard' %}" class="btn btn-primary mt-4">Go to Dashboard</a>
             </div>
         </div>
     </div>

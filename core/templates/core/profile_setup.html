@@ -2,16 +2,16 @@
 {% load crispy_forms_tags %}
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card my-5">
-            <div class="card-header text-center">
-                <h3>Complete Your Profile</h3>
+    <div class="col-md-8 col-lg-7">
+        <div class="card mt-5">
+            <div class="card-header text-center py-4">
+                <h3 class="mb-0">Complete Your Profile</h3>
             </div>
-            <div class="card-body">
-                <form method="post">
+            <div class="card-body p-4">
+                <form method="post" novalidate>
                     {% csrf_token %}
                     {{ form|crispy }}
-                    <button type="submit" class="btn btn-primary btn-block mt-3">Save Profile</button>
+                    <button type="submit" class="btn btn-primary btn-block w-100 mt-4">Save Profile</button>
                 </form>
             </div>
         </div>
