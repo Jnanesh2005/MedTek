@@ -1,0 +1,39 @@
+from django.db import models
+from django.contrib.auth.models import User
+
+class StudentProfile(models.Model):
+    GENDER_CHOICES = [
+        ('M', 'Male'),
+        ('F', 'Female'),
+        ('O', 'Other'),
+    ]
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    age = models.IntegerField()
+    gender = models.CharField(max_length=1, choices=GENDER_CHOICES)
+    school_name = models.CharField(max_length=200)
+    height = models.FloatField(help_text="in cm")
+    weight = models.FloatField(help_text="in kg")
+    pre_existing_diseases = models.TextField(blank=True, help_text="Separate with commas")
+    contact_number = models.CharField(max_length=20)
+    email = models.EmailField(unique=True)
+
+    def __str__(self):
+        return self.name
+
+class VitalsSubmission(models.Model):
+    student_profile = models.ForeignKey(StudentProfile, on_delete=models.CASCADE)
+    heart_rate = models.IntegerField(help_text="in bpm")
+    spo2 = models.IntegerField(help_text="in %")
+    temperature = models.FloatField(help_text="in °F")
+    respiration_rate = models.IntegerField(null=True, blank=True, help_text="in breaths per minute")
+    submission_date = models.DateTimeField(auto_now_add=True)
+    health_status = models.CharField(max_length=20, default='Healthy') # 'Healthy', 'Unhealthy'
+
+    def __str__(self):
+        return f"Vitals for {self.student_profile.name} on {self.submission_date.strftime('%Y-%m-%d')}"
+
+class OTP(models.Model):
+    email = models.EmailField(unique=True)
+    otp = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)

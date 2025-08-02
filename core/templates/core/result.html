@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card my-5 text-center">
+            <div class="card-header">
+                <h3>Health Status Report</h3>
+            </div>
+            <div class="card-body">
+                {% if vitals.health_status == 'Healthy' %}
+                    <h4 class="text-success">You seem healthy!</h4>
+                    <p>Your vitals are within the normal range. Keep up the good work!</p>
+                {% else %}
+                    <h4 class="text-danger">Possible signs of infection.</h4>
+                    <p>Your vitals are outside the healthy range. Please consult the school medical staff immediately.</p>
+                {% endif %}
+                <hr>
+                <p><strong>Your Submission Details:</strong></p>
+                <p>Heart Rate: {{ vitals.heart_rate }} bpm</p>
+                <p>SpO₂: {{ vitals.spo2 }}%</p>
+                <p>Temperature: {{ vitals.temperature }} °F</p>
+                <a href="{% url 'dashboard' %}" class="btn btn-primary mt-3">Go to Dashboard</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

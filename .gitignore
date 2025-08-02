@@ -1,0 +1,10 @@
+# Virtual environment
+venv/
+# Database and secrets
+db.sqlite3
+.env
+# Python cache and dependencies
+__pycache__/
+*.pyc
+# Static files collected for deployment
+staticfiles/
