@@ -32,6 +32,39 @@ def create_client_secrets_dict():
             "token_uri": "https://oauth2.googleapis.com/token"
         }
     }
+# In core/views.py, with other helper functions
+def refresh_google_fit_token(token_obj):
+    """
+    Refreshes the Google Fit access token using the refresh token.
+    """
+    from google.oauth2.credentials import Credentials
+    from google_auth_oauthlib.flow import Flow
+    from google.auth.transport.requests import Request
+    import requests
+
+    credentials_dict = {
+        'token': token_obj.access_token,
+        'refresh_token': token_obj.refresh_token,
+        'token_uri': token_obj.token_uri,
+        'client_id': token_obj.client_id,
+        'client_secret': token_obj.client_secret,
+        'scopes': token_obj.scopes.split(' '),
+        'expiry': token_obj.expires_in,
+    }
+
+    credentials = Credentials(**credentials_dict)
+
+    if credentials.expired and credentials.refresh_token:
+        request = Request()
+        credentials.refresh(request)
+
+        # Update the token object in the database
+        token_obj.access_token = credentials.token
+        token_obj.expires_in = credentials.expiry
+        token_obj.save()
+        return token_obj
+    else:
+        return token_obj
 
 
 def send_otp_email(email, otp):
@@ -306,12 +339,19 @@ def google_fit_callback(request):
         messages.error(request, f"An error occurred during Google Fit connection: {e}")
         return redirect('dashboard')
     # In core/views.py, at the end of the file
+# In core/views.py, in the fetch_google_fit_data view
 @login_required
 def fetch_google_fit_data(request):
     try:
+        # Get the token object
         token_obj = GoogleFitToken.objects.get(user=request.user)
+
+        # Refresh the token before making the API call
+        token_obj = refresh_google_fit_token(token_obj)
+
         headers = {'Authorization': f'Bearer {token_obj.access_token}'}
 
+        # ... rest of the API call code remains the same ...
         now = datetime.datetime.now(datetime.timezone.utc)
         end_time_millis = int(now.timestamp() * 1000)
         start_time_millis = int((now - datetime.timedelta(days=1)).timestamp() * 1000)
