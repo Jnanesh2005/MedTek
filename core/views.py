@@ -33,6 +33,7 @@ def create_client_secrets_dict():
         }
     }
 # In core/views.py, with other helper functions
+# In core/views.py, with other helper functions
 def refresh_google_fit_token(token_obj):
     """
     Refreshes the Google Fit access token using the refresh token.
@@ -41,6 +42,7 @@ def refresh_google_fit_token(token_obj):
     from google_auth_oauthlib.flow import Flow
     from google.auth.transport.requests import Request
     import requests
+    import datetime
 
     credentials_dict = {
         'token': token_obj.access_token,
@@ -54,7 +56,8 @@ def refresh_google_fit_token(token_obj):
 
     credentials = Credentials(**credentials_dict)
 
-    if credentials.expired and credentials.refresh_token:
+    # FIX: Check if the token is about to expire, using timezone-aware datetimes
+    if credentials.expiry and (credentials.expiry - datetime.timedelta(minutes=5) < datetime.datetime.now(datetime.timezone.utc)):
         request = Request()
         credentials.refresh(request)
 
@@ -65,8 +68,6 @@ def refresh_google_fit_token(token_obj):
         return token_obj
     else:
         return token_obj
-
-
 def send_otp_email(email, otp):
     subject = "MedTek - Your OTP for Login"
     message = f"Hello,\n\nYour One-Time Password (OTP) for MedTek is: {otp}\n\nThis OTP is valid for 5 minutes."
