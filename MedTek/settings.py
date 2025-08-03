@@ -25,7 +25,7 @@ SECRET_KEY = os.getenv('SECRET_KEY','django-insecure-8s%zelz*o7y&f93zixzg!!h)i9b
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['medtek.onrender.com']
+ALLOWED_HOSTS = ['medtek.onrender.com','http://127.0.0.1:8000/',]
 
 # You can also make this dynamic for a production-ready setup
 # ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost').split(',')
