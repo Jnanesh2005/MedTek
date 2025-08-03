@@ -351,6 +351,8 @@ def google_fit_callback(request):
 # In core/views.py
 # In core/views.py
 # In core/views.py
+# In core/views.py
+# In core/views.py
 @login_required
 def fetch_google_fit_data(request):
     try:
@@ -360,12 +362,11 @@ def fetch_google_fit_data(request):
         headers = {'Authorization': f'Bearer {token_obj.access_token}'}
 
         # --- FIND THE LATEST HEART RATE ENTRY ---
-        # Define a 30-minute window for the latest data
         now = datetime.datetime.now(datetime.timezone.utc)
         end_time_millis = int(now.timestamp() * 1000)
-        start_time_millis = int((now - datetime.timedelta(minutes=30)).timestamp() * 1000)
+        start_time_millis = int((now - datetime.timedelta(days=1)).timestamp() * 1000)
 
-        # Use the aggregate endpoint to get the latest data point
+        # Use the aggregate endpoint to get all data points
         api_url = "https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate"
         request_body = {
             "aggregateBy": [{
