@@ -345,6 +345,7 @@ def google_fit_callback(request):
         messages.error(request, f"An unexpected error occurred: {e}")
         return redirect('dashboard')
 # In core/views.py
+# In core/views.py
 @login_required
 def fetch_google_fit_data(request):
     try:
@@ -353,6 +354,20 @@ def fetch_google_fit_data(request):
 
         headers = {'Authorization': f'Bearer {token_obj.access_token}'}
 
+        # First, find a valid data source for heart rate
+        data_source_url = "https://www.googleapis.com/fitness/v1/users/me/dataSources/com.google.heart_rate.bpm"
+        data_source_response = requests.get(data_source_url, headers=headers)
+        data_source_response.raise_for_status()
+
+        data_sources = data_source_response.json().get('dataSource', [])
+
+        if not data_sources:
+            messages.warning(request, "No heart rate data sources found for your account.")
+            return redirect('dashboard')
+
+        data_source_id = data_sources[0]['dataStreamId'] # Use the first available data source
+
+        # Now, use the dynamic data source ID in the main API request
         now = datetime.datetime.now(datetime.timezone.utc)
         end_time_millis = int(now.timestamp() * 1000)
         start_time_millis = int((now - datetime.timedelta(days=1)).timestamp() * 1000)
@@ -362,7 +377,7 @@ def fetch_google_fit_data(request):
         request_body = {
             "aggregateBy": [{
                 "dataTypeName": "com.google.heart_rate.bpm",
-                "dataSourceId": "derived:com.google.heart_rate.bpm:com.google.android.gms:merged"
+                "dataSourceId": data_source_id  # Use the dynamic ID here
             }],
             "bucketByTime": {"durationMillis": 86400000},
             "startTimeMillis": start_time_millis,
@@ -370,14 +385,6 @@ def fetch_google_fit_data(request):
         }
 
         response = requests.post(api_url, headers=headers, json=request_body)
-
-        # Print the raw API response to the logs
-        print(f"API Request URL: {api_url}")
-        print(f"API Request Headers: {headers}")
-        print(f"API Request Body: {json.dumps(request_body)}")
-        print(f"API Response Status: {response.status_code}")
-        print(f"API Response JSON: {response.text}")
-
         response.raise_for_status()
 
         data = response.json()
