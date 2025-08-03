@@ -241,9 +241,10 @@ def google_fit_auth(request):
         'https://www.googleapis.com/auth/fitness.heart_rate.read',
     ]
 
-    # **CORRECTED:** Use environment variables directly instead of the file
-    flow = Flow.from_client_secrets_dict(
-        create_client_secrets_dict(),
+    # **CORRECTED:** Use the `from_client_config` method
+    client_config = create_client_secrets_dict()
+    flow = Flow.from_client_config(
+        client_config,
         scopes=scopes,
         redirect_uri=settings.GOOGLE_REDIRECT_URI
     )
@@ -264,9 +265,10 @@ def google_fit_callback(request):
     # Retrieve the state from the session
     state = request.session['oauth_state']
 
-    # **CORRECTED:** Use environment variables directly instead of the file
-    flow = Flow.from_client_secrets_dict(
-        create_client_secrets_dict(),
+    # **CORRECTED:** Use the `from_client_config` method
+    client_config = create_client_secrets_dict()
+    flow = Flow.from_client_config(
+        client_config,
         scopes=None,
         state=state,
         redirect_uri=settings.GOOGLE_REDIRECT_URI
