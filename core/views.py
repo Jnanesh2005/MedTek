@@ -346,6 +346,7 @@ def google_fit_callback(request):
         return redirect('dashboard')
 # In core/views.py
 # In core/views.py
+# In core/views.py
 @login_required
 def fetch_google_fit_data(request):
     try:
@@ -354,9 +355,10 @@ def fetch_google_fit_data(request):
 
         headers = {'Authorization': f'Bearer {token_obj.access_token}'}
 
-        # First, find a valid data source for heart rate
-        data_source_url = "https://www.googleapis.com/fitness/v1/users/me/dataSources/com.google.heart_rate.bpm"
-        data_source_response = requests.get(data_source_url, headers=headers)
+        # **CORRECTED:** Use the dataSources endpoint with a query parameter
+        data_source_url = "https://www.googleapis.com/fitness/v1/users/me/dataSources"
+        params = {'dataTypeName': 'com.google.heart_rate.bpm'}
+        data_source_response = requests.get(data_source_url, headers=headers, params=params)
         data_source_response.raise_for_status()
 
         data_sources = data_source_response.json().get('dataSource', [])
@@ -365,9 +367,8 @@ def fetch_google_fit_data(request):
             messages.warning(request, "No heart rate data sources found for your account.")
             return redirect('dashboard')
 
-        data_source_id = data_sources[0]['dataStreamId'] # Use the first available data source
+        data_source_id = data_sources[0]['dataStreamId']
 
-        # Now, use the dynamic data source ID in the main API request
         now = datetime.datetime.now(datetime.timezone.utc)
         end_time_millis = int(now.timestamp() * 1000)
         start_time_millis = int((now - datetime.timedelta(days=1)).timestamp() * 1000)
@@ -377,7 +378,7 @@ def fetch_google_fit_data(request):
         request_body = {
             "aggregateBy": [{
                 "dataTypeName": "com.google.heart_rate.bpm",
-                "dataSourceId": data_source_id  # Use the dynamic ID here
+                "dataSourceId": data_source_id
             }],
             "bucketByTime": {"durationMillis": 86400000},
             "startTimeMillis": start_time_millis,
