@@ -42,8 +42,7 @@ class OTP(models.Model):
 class GoogleFitToken(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     access_token = models.CharField(max_length=255)
-    refresh_token = models.CharField(max_length=255)
-    token_uri = models.CharField(max_length=255, blank=True)
+    refresh_token = models.CharField(max_length=255, null=True, blank=True)   
     client_id = models.CharField(max_length=255, blank=True)
     client_secret = models.CharField(max_length=255, blank=True)
     scopes = models.TextField()
