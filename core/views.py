@@ -349,6 +349,7 @@ def google_fit_callback(request):
 # In core/views.py
 # In core/views.py
 # In core/views.py
+# In core/views.py
 @login_required
 def fetch_google_fit_data(request):
     try:
@@ -363,7 +364,6 @@ def fetch_google_fit_data(request):
 
         api_url = "https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate"
 
-        # **FINAL FIX:** Use a simplified request body
         request_body = {
             "aggregateBy": [{
                 "dataTypeName": "com.google.heart_rate.bpm"
@@ -374,8 +374,6 @@ def fetch_google_fit_data(request):
         }
 
         response = requests.post(api_url, headers=headers, json=request_body)
-
-        # The rest of the code remains the same
         response.raise_for_status()
 
         data = response.json()
@@ -392,6 +390,9 @@ def fetch_google_fit_data(request):
             status = 'Healthy'
             if heart_rate > 100 or heart_rate < 60:
                 status = 'Unhealthy'
+
+            # THIS IS THE FINAL PRINT STATEMENT TO CONFIRM THE DATA
+            print(f"DEBUG: Fetched Heart Rate from Google Fit API is: {heart_rate} BPM")
 
             VitalsSubmission.objects.create(
                 student_profile=profile,
