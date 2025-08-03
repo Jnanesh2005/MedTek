@@ -122,6 +122,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'login'
+# In settings.py, with other authentication settings
+LOGIN_URL = 'login'
 
 # Email OTP settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
