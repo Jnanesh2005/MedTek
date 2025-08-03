@@ -39,12 +39,14 @@ class OTP(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 # In core/models.py, after the other models
+# In core/models.py
 class GoogleFitToken(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     access_token = models.CharField(max_length=255)
-    refresh_token = models.CharField(max_length=255, null=True, blank=True)   
-    client_id = models.CharField(max_length=255, blank=True)
-    client_secret = models.CharField(max_length=255, blank=True)
+    refresh_token = models.CharField(max_length=255, null=True, blank=True)
+    token_uri = models.CharField(max_length=255, null=True, blank=True)
+    client_id = models.CharField(max_length=255)
+    client_secret = models.CharField(max_length=255)
     scopes = models.TextField()
     expires_in = models.DateTimeField()
 
