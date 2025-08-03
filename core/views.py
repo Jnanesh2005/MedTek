@@ -368,7 +368,16 @@ def fetch_google_fit_data(request):
             "startTimeMillis": start_time_millis,
             "endTimeMillis": end_time_millis
         }
-
+        
+# In fetch_google_fit_data view
+# ...
+# This is the temporary debugging code
+        print("--- DEBUGGING GOOGLE FIT API CALL ---")
+        print(f"URL: {api_url}")
+        print(f"Headers: {headers}")        
+        print(f"Body: {json.dumps(request_body)}")
+        print("-------------------------------------")
+# ...
         response = requests.post(api_url, headers=headers, json=request_body)
         response.raise_for_status()
 
