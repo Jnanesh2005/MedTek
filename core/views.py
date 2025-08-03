@@ -297,10 +297,14 @@ def google_fit_auth(request):
 
 # In core/views.py
 # In core/views.py
+# In core/views.py
 @login_required
 def google_fit_callback(request):
     try:
-        state = request.session['oauth_state']
+        state = request.session.get('oauth_state')
+        if not state:
+            messages.error(request, "OAuth state not found in session. Please try connecting again.")
+            return redirect('dashboard')
 
         client_config = create_client_secrets_dict()
         flow = Flow.from_client_config(
@@ -310,25 +314,17 @@ def google_fit_callback(request):
             redirect_uri=settings.GOOGLE_REDIRECT_URI
         )
 
-        # Add try...except to catch errors in token fetching
-        try:
-            flow.fetch_token(authorization_response=request.build_absolute_uri())
-            credentials = flow.credentials
-        except Exception as e:
-            # Log the specific error for debugging
-            print(f"Error fetching token: {e}")
-            messages.error(request, f"Error fetching token from Google: {e}")
-            return redirect('dashboard')
+        flow.fetch_token(authorization_response=request.build_absolute_uri())
 
-        if not credentials or not credentials.token:
-            messages.error(request, "Failed to get tokens from Google. Please try again.")
-            return redirect('dashboard')
+        credentials = flow.credentials
 
-        # The rest of the code remains the same
-        if isinstance(credentials.scopes, str):
-            scopes_str = credentials.scopes
-        else:
-            scopes_str = ' '.join(list(credentials.scopes))
+        # A more robust check for scopes
+        scopes_str = ''
+        if credentials.scopes:
+            if isinstance(credentials.scopes, str):
+                scopes_str = credentials.scopes
+            else:
+                scopes_str = ' '.join(credentials.scopes)
 
         GoogleFitToken.objects.update_or_create(
             user=request.user,
@@ -344,10 +340,11 @@ def google_fit_callback(request):
         )
         messages.success(request, "Google Fit connected successfully!")
         return redirect('dashboard')
-
+    
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {e}")
-        return redirect('dashboard')@login_required
+        return redirect('dashboard')
+@login_required   
 def fetch_google_fit_data(request):
     try:
         # Get the token object
