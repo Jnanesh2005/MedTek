@@ -10,10 +10,16 @@ from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from .forms import UserRegistrationForm, OTPVerificationForm, ProfileSetupForm, VitalsSubmissionForm
-from .models import StudentProfile, VitalsSubmission, OTP
+from .models import GoogleFitToken, StudentProfile, VitalsSubmission, OTP
 import smtplib
 from email.mime.text import MIMEText
 import ssl
+import random
+from google_auth_oauthlib.flow import Flow
+from google.auth.transport.requests import Request
+import datetime
+import json
+
 def send_otp_email(email, otp):
     subject = "MedTek - Your OTP for Login"
     message = f"Hello,\n\nYour One-Time Password (OTP) for MedTek is: {otp}\n\nThis OTP is valid for 5 minutes."
@@ -212,3 +218,63 @@ def admin_dashboard(request):
         })
 
     return render(request, 'core/admin_dashboard.html', {'student_data': student_data})
+# In core/views.py, at the end of the file
+@login_required
+def google_fit_auth(request):
+    # Scopes are permissions our app needs from Google
+    scopes = [
+        'https://www.googleapis.com/auth/fitness.activity.read',
+        'https://www.googleapis.com/auth/fitness.body.read',
+        'https://www.googleapis.com/auth/fitness.heart_rate.read',
+    ]
+
+    # The `client_secret.json` file is used to get the client ID and secret
+    flow = Flow.from_client_secrets_file(
+        'client_secret.json',
+        scopes=scopes,
+        redirect_uri=settings.GOOGLE_REDIRECT_URI
+    )
+
+    # Get the authorization URL to redirect the user
+    authorization_url, state = flow.authorization_url(
+        access_type='offline',
+        include_granted_scopes='true'
+    )
+
+    # Store the state in the session to prevent CSRF attacks
+    request.session['oauth_state'] = state
+    return redirect(authorization_url)
+
+
+@login_required
+def google_fit_callback(request):
+    # Retrieve the state from the session
+    state = request.session['oauth_state']
+
+    flow = Flow.from_client_secrets_file(
+        'client_secret.json',
+        scopes=None,
+        state=state,
+        redirect_uri=settings.GOOGLE_REDIRECT_URI
+    )
+
+    # Fetch the access token using the code from the callback URL
+    flow.fetch_token(authorization_response=request.build_absolute_uri())
+
+    credentials = flow.credentials
+
+    # Save the credentials to the database
+    GoogleFitToken.objects.update_or_create(
+        user=request.user,
+        defaults={
+            'access_token': credentials.token,
+            'refresh_token': credentials.refresh_token,
+            'token_uri': credentials.token_uri,
+            'client_id': credentials.client_id,
+            'client_secret': credentials.client_secret,
+            'scopes': ' '.join(credentials.scopes),
+            'expires_in': credentials.expiry,
+        }
+    )
+    messages.success(request, "Google Fit connected successfully!")
+    return redirect('dashboard')

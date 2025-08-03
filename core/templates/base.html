@@ -96,6 +96,10 @@
                 </ul>
             </div>
         </div>
+        <div class="mt-4 text-center">
+    <a href="{% url 'submit_vitals' %}" class="btn btn-primary btn-hover-effect">Submit Vitals</a>
+    <a href="{% url 'google_fit_auth' %}" class="btn btn-warning btn-hover-effect ms-3">Connect Google Fit</a>
+</div>
     </nav>
     <div class="container my-5">
         {% if messages %}

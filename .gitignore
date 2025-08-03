@@ -8,3 +8,4 @@ __pycache__/
 *.pyc
 # Static files collected for deployment
 staticfiles/
+client_secret.json

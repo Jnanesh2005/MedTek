@@ -37,3 +37,17 @@ class OTP(models.Model):
     email = models.EmailField(unique=True)
     otp = models.CharField(max_length=6)
     created_at = models.DateTimeField(auto_now_add=True)
+
+# In core/models.py, after the other models
+class GoogleFitToken(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    access_token = models.CharField(max_length=255)
+    refresh_token = models.CharField(max_length=255)
+    token_uri = models.CharField(max_length=255, blank=True)
+    client_id = models.CharField(max_length=255, blank=True)
+    client_secret = models.CharField(max_length=255, blank=True)
+    scopes = models.TextField()
+    expires_in = models.DateTimeField()
+
+    def __str__(self):
+        return f"Token for {self.user.username}"

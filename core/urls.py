@@ -11,4 +11,6 @@ urlpatterns = [
     path('result/<int:vitals_id>/', views.result, name='result'),
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
     path('', views.login_view, name='home'),
+    path('google-fit/auth/', views.google_fit_auth, name='google_fit_auth'),
+    path('google-fit/callback/', views.google_fit_callback, name='google_fit_callback'),
 ]
