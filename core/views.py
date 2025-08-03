@@ -344,18 +344,15 @@ def google_fit_callback(request):
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {e}")
         return redirect('dashboard')
-@login_required   
+# In core/views.py
+@login_required
 def fetch_google_fit_data(request):
     try:
-        # Get the token object
         token_obj = GoogleFitToken.objects.get(user=request.user)
-
-        # Refresh the token before making the API call
         token_obj = refresh_google_fit_token(token_obj)
 
         headers = {'Authorization': f'Bearer {token_obj.access_token}'}
 
-        # ... rest of the API call code remains the same ...
         now = datetime.datetime.now(datetime.timezone.utc)
         end_time_millis = int(now.timestamp() * 1000)
         start_time_millis = int((now - datetime.timedelta(days=1)).timestamp() * 1000)
@@ -371,17 +368,16 @@ def fetch_google_fit_data(request):
             "startTimeMillis": start_time_millis,
             "endTimeMillis": end_time_millis
         }
-        
-# In fetch_google_fit_data view
-# ...
-# This is the temporary debugging code
-        print("--- DEBUGGING GOOGLE FIT API CALL ---")
-        print(f"URL: {api_url}")
-        print(f"Headers: {headers}")        
-        print(f"Body: {json.dumps(request_body)}")
-        print("-------------------------------------")
-# ...
+
         response = requests.post(api_url, headers=headers, json=request_body)
+
+        # Print the raw API response to the logs
+        print(f"API Request URL: {api_url}")
+        print(f"API Request Headers: {headers}")
+        print(f"API Request Body: {json.dumps(request_body)}")
+        print(f"API Response Status: {response.status_code}")
+        print(f"API Response JSON: {response.text}")
+
         response.raise_for_status()
 
         data = response.json()
