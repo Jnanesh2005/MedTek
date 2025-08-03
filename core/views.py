@@ -20,6 +20,19 @@ from google.auth.transport.requests import Request
 import datetime
 import json
 
+def create_client_secrets_dict():
+    """Creates a client_secrets dictionary from environment variables."""
+    return {
+        "web": {
+            "client_id": settings.GOOGLE_CLIENT_ID,
+            "client_secret": settings.GOOGLE_CLIENT_SECRET,
+            "redirect_uris": [settings.GOOGLE_REDIRECT_URI],
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token"
+        }
+    }
+
+
 def send_otp_email(email, otp):
     subject = "MedTek - Your OTP for Login"
     message = f"Hello,\n\nYour One-Time Password (OTP) for MedTek is: {otp}\n\nThis OTP is valid for 5 minutes."
@@ -228,9 +241,9 @@ def google_fit_auth(request):
         'https://www.googleapis.com/auth/fitness.heart_rate.read',
     ]
 
-    # The `client_secret.json` file is used to get the client ID and secret
-    flow = Flow.from_client_secrets_file(
-        'client_secret.json',
+    # **CORRECTED:** Use environment variables directly instead of the file
+    flow = Flow.from_client_secrets_dict(
+        create_client_secrets_dict(),
         scopes=scopes,
         redirect_uri=settings.GOOGLE_REDIRECT_URI
     )
@@ -251,8 +264,9 @@ def google_fit_callback(request):
     # Retrieve the state from the session
     state = request.session['oauth_state']
 
-    flow = Flow.from_client_secrets_file(
-        'client_secret.json',
+    # **CORRECTED:** Use environment variables directly instead of the file
+    flow = Flow.from_client_secrets_dict(
+        create_client_secrets_dict(),
         scopes=None,
         state=state,
         redirect_uri=settings.GOOGLE_REDIRECT_URI
