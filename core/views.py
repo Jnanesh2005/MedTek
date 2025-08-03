@@ -296,6 +296,7 @@ def google_fit_auth(request):
 
 
 # In core/views.py
+# In core/views.py
 @login_required
 def google_fit_callback(request):
     try:
@@ -309,17 +310,25 @@ def google_fit_callback(request):
             redirect_uri=settings.GOOGLE_REDIRECT_URI
         )
 
-        flow.fetch_token(authorization_response=request.build_absolute_uri())
+        # Add try...except to catch errors in token fetching
+        try:
+            flow.fetch_token(authorization_response=request.build_absolute_uri())
+            credentials = flow.credentials
+        except Exception as e:
+            # Log the specific error for debugging
+            print(f"Error fetching token: {e}")
+            messages.error(request, f"Error fetching token from Google: {e}")
+            return redirect('dashboard')
 
-        credentials = flow.credentials
+        if not credentials or not credentials.token:
+            messages.error(request, "Failed to get tokens from Google. Please try again.")
+            return redirect('dashboard')
 
-        # THIS IS THE FINAL, CORRECTED CODE
-        scopes_str = ''
-        if credentials.scopes:  # Check if scopes is not None
-            if isinstance(credentials.scopes, str):
-                scopes_str = credentials.scopes
-            else:
-                scopes_str = ' '.join(list(credentials.scopes))
+        # The rest of the code remains the same
+        if isinstance(credentials.scopes, str):
+            scopes_str = credentials.scopes
+        else:
+            scopes_str = ' '.join(list(credentials.scopes))
 
         GoogleFitToken.objects.update_or_create(
             user=request.user,
@@ -337,11 +346,8 @@ def google_fit_callback(request):
         return redirect('dashboard')
 
     except Exception as e:
-        messages.error(request, f"An error occurred during Google Fit connection: {e}")
-        return redirect('dashboard')
-    # In core/views.py, at the end of the file
-# In core/views.py, in the fetch_google_fit_data view
-@login_required
+        messages.error(request, f"An unexpected error occurred: {e}")
+        return redirect('dashboard')@login_required
 def fetch_google_fit_data(request):
     try:
         # Get the token object
