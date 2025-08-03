@@ -43,6 +43,9 @@ class Command(BaseCommand):
 
                 response = requests.post(api_url, headers=headers, json=request_body)
                 response.raise_for_status()  # Raise an error for bad status codes
+                self.stdout.write(f"API Response Status Code: {response.status_code}")
+                self.stdout.write(f"API Response Body: {response.text}")
+                
                 
                 data = response.json()
                 

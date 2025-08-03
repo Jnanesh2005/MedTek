@@ -19,6 +19,7 @@ from google_auth_oauthlib.flow import Flow
 from google.auth.transport.requests import Request
 import datetime
 import json
+import requests
 
 def create_client_secrets_dict():
     """Creates a client_secrets dictionary from environment variables."""
@@ -304,3 +305,63 @@ def google_fit_callback(request):
     except Exception as e:
         messages.error(request, f"An error occurred during Google Fit connection: {e}")
         return redirect('dashboard')
+    # In core/views.py, at the end of the file
+@login_required
+def fetch_google_fit_data(request):
+    try:
+        token_obj = GoogleFitToken.objects.get(user=request.user)
+        headers = {'Authorization': f'Bearer {token_obj.access_token}'}
+
+        now = datetime.datetime.now(datetime.timezone.utc)
+        end_time_millis = int(now.timestamp() * 1000)
+        start_time_millis = int((now - datetime.timedelta(days=1)).timestamp() * 1000)
+
+        api_url = "https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate"
+
+        request_body = {
+            "aggregateBy": [{
+                "dataTypeName": "com.google.heart_rate.bpm",
+                "dataSourceId": "derived:com.google.heart_rate.bpm:com.google.android.gms:merged"
+            }],
+            "bucketByTime": {"durationMillis": 86400000},
+            "startTimeMillis": start_time_millis,
+            "endTimeMillis": end_time_millis
+        }
+
+        response = requests.post(api_url, headers=headers, json=request_body)
+        response.raise_for_status()
+
+        data = response.json()
+
+        heart_rate = None
+        if data.get('bucket') and data['bucket'][0].get('dataset') and data['bucket'][0]['dataset'][0].get('point'):
+            points = data['bucket'][0]['dataset'][0]['point']
+            if points:
+                heart_rates = [p['value'][0]['fpVal'] for p in points]
+                heart_rate = sum(heart_rates) / len(heart_rates)
+
+        if heart_rate:
+            profile = StudentProfile.objects.get(user=request.user)
+            status = 'Healthy'
+            if heart_rate > 100 or heart_rate < 60:
+                status = 'Unhealthy'
+
+            VitalsSubmission.objects.create(
+                student_profile=profile,
+                heart_rate=int(heart_rate),
+                spo2=98,
+                temperature=98.6,
+                health_status=status
+            )
+            messages.success(request, "Vitals synced from Google Fit successfully!")
+        else:
+            messages.warning(request, "No heart rate data found for the last 24 hours.")
+
+    except GoogleFitToken.DoesNotExist:
+        messages.error(request, "Please connect your Google Fit account first.")
+    except requests.exceptions.RequestException as e:
+        messages.error(request, f"API request failed: {e}")
+    except Exception as e:
+        messages.error(request, f"An unexpected error occurred: {e}")
+
+    return redirect('dashboard')

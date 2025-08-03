@@ -25,8 +25,9 @@ SECRET_KEY = os.getenv('SECRET_KEY','django-insecure-8s%zelz*o7y&f93zixzg!!h)i9b
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['medtek.onrender.com','http://127.0.0.1:8000/',]
-
+# In MedTek/settings.py
+# Get allowed hosts from an environment variable, falling back to localhost for local dev
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
 # You can also make this dynamic for a production-ready setup
 # ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost').split(',')
 # Application definition

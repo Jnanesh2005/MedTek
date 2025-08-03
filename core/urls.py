@@ -13,4 +13,6 @@ urlpatterns = [
     path('', views.login_view, name='home'),
     path('google-fit/auth/', views.google_fit_auth, name='google_fit_auth'),
     path('google-fit/callback/', views.google_fit_callback, name='google_fit_callback'),
+    path('sync-vitals/', views.fetch_google_fit_data, name='fetch_google_fit_data'),
+
 ]
