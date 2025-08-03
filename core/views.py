@@ -347,6 +347,7 @@ def google_fit_callback(request):
 # In core/views.py
 # In core/views.py
 # In core/views.py
+# In core/views.py
 @login_required
 def fetch_google_fit_data(request):
     try:
@@ -354,20 +355,6 @@ def fetch_google_fit_data(request):
         token_obj = refresh_google_fit_token(token_obj)
 
         headers = {'Authorization': f'Bearer {token_obj.access_token}'}
-
-        # **CORRECTED:** Use the dataSources endpoint with a query parameter
-        data_source_url = "https://www.googleapis.com/fitness/v1/users/me/dataSources"
-        params = {'dataTypeName': 'com.google.heart_rate.bpm'}
-        data_source_response = requests.get(data_source_url, headers=headers, params=params)
-        data_source_response.raise_for_status()
-
-        data_sources = data_source_response.json().get('dataSource', [])
-
-        if not data_sources:
-            messages.warning(request, "No heart rate data sources found for your account.")
-            return redirect('dashboard')
-
-        data_source_id = data_sources[0]['dataStreamId']
 
         now = datetime.datetime.now(datetime.timezone.utc)
         end_time_millis = int(now.timestamp() * 1000)
@@ -378,7 +365,7 @@ def fetch_google_fit_data(request):
         request_body = {
             "aggregateBy": [{
                 "dataTypeName": "com.google.heart_rate.bpm",
-                "dataSourceId": data_source_id
+                "dataSourceId": "derived:com.google.heart_rate.bpm:com.google.android.gms:merged"
             }],
             "bucketByTime": {"durationMillis": 86400000},
             "startTimeMillis": start_time_millis,
@@ -402,6 +389,9 @@ def fetch_google_fit_data(request):
             status = 'Healthy'
             if heart_rate > 100 or heart_rate < 60:
                 status = 'Unhealthy'
+
+            # THIS IS THE FINAL PRINT STATEMENT TO CONFIRM THE DATA
+            print(f"DEBUG: Fetched Heart Rate from Google Fit API is: {heart_rate} BPM")
 
             VitalsSubmission.objects.create(
                 student_profile=profile,
