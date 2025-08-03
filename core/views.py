@@ -260,39 +260,52 @@ def google_fit_auth(request):
     return redirect(authorization_url)
 
 
+# In core/views.py
 @login_required
 def google_fit_callback(request):
-    state = request.session['oauth_state']
+    try:
+        # Retrieve the state from the session
+        state = request.session['oauth_state']
 
-    client_config = create_client_secrets_dict()
-    flow = Flow.from_client_config(
-        client_config,
-        scopes=None,
-        state=state,
-        redirect_uri=settings.GOOGLE_REDIRECT_URI
-    )
+        # Use the corrected method to get the flow from client config
+        client_config = create_client_secrets_dict()
+        flow = Flow.from_client_config(
+            client_config,
+            scopes=None,
+            state=state,
+            redirect_uri=settings.GOOGLE_REDIRECT_URI
+        )
 
-    flow.fetch_token(authorization_response=request.build_absolute_uri())
+        # Fetch the access token using the code from the callback URL
+        flow.fetch_token(authorization_response=request.build_absolute_uri())
 
-    credentials = flow.credentials
+        credentials = flow.credentials
 
-    # THIS IS THE CORRECTED CODE
-    if isinstance(credentials.scopes, str):
-        scopes_str = credentials.scopes
-    else:
-        scopes_str = ' '.join(credentials.scopes)
+        # THIS IS THE CORRECTED, MORE ROBUST CODE
+        # It ensures scopes is always a list of strings before joining
+        if isinstance(credentials.scopes, str):
+            scopes_list = credentials.scopes.split(' ')
+        else:
+            scopes_list = list(credentials.scopes)
 
-    GoogleFitToken.objects.update_or_create(
-        user=request.user,
-        defaults={
-            'access_token': credentials.token,
-            'refresh_token': credentials.refresh_token,
-            'token_uri': credentials.token_uri,
-            'client_id': credentials.client_id,
-            'client_secret': credentials.client_secret,
-            'scopes': scopes_str,  # Use the corrected variable
-            'expires_in': credentials.expiry,
-        }
-    )
-    messages.success(request, "Google Fit connected successfully!")
-    return redirect('dashboard')
+        scopes_str = ' '.join(scopes_list)
+
+        # Save the credentials to the database
+        GoogleFitToken.objects.update_or_create(
+            user=request.user,
+            defaults={
+                'access_token': credentials.token,
+                'refresh_token': credentials.refresh_token,
+                'token_uri': credentials.token_uri,
+                'client_id': credentials.client_id,
+                'client_secret': credentials.client_secret,
+                'scopes': scopes_str,  # Use the corrected variable
+                'expires_in': credentials.expiry,
+            }
+        )
+        messages.success(request, "Google Fit connected successfully!")
+        return redirect('dashboard')
+    
+    except Exception as e:
+        messages.error(request, f"An error occurred during Google Fit connection: {e}")
+        return redirect('dashboard')
