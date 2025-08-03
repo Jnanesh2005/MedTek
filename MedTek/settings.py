@@ -27,11 +27,8 @@ DEBUG = True
 
 # In MedTek/settings.py
 # Get allowed hosts from an environment variable, falling back to localhost for local dev
-# In MedTek/settings.py
-if os.getenv('ALLOWED_HOSTS'):
-    ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(',')
-else:
-    ALLOWED_HOSTS = ['127.0.0.1', 'localhost']# You can also make this dynamic for a production-ready setup
+ALLOWED_HOSTS = ['medtek.onrender.com']
+# You can also make this dynamic for a production-ready setup
 # ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost').split(',')
 # Application definition
 INSTALLED_APPS = [
