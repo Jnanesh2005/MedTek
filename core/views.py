@@ -341,6 +341,7 @@ def google_fit_auth(request):
     request.session['oauth_state'] = state
     return redirect(authorization_url)
 
+# In core/views.py
 @login_required
 def google_fit_callback(request):
     try:
@@ -371,6 +372,7 @@ def google_fit_callback(request):
             else:
                 scopes_str = ' '.join(credentials.scopes)
 
+        # FIX: Save all credentials to the database
         GoogleFitToken.objects.update_or_create(
             user=request.user,
             defaults={
@@ -385,11 +387,10 @@ def google_fit_callback(request):
         )
         messages.success(request, "Google Fit connected successfully!")
         return redirect('dashboard')
-    
+
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {e}")
         return redirect('dashboard')
-
 @login_required
 def fetch_google_fit_data(request):
     try:
