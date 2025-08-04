@@ -342,6 +342,7 @@ def google_fit_auth(request):
     return redirect(authorization_url)
 
 # In core/views.py
+# In core/views.py
 @login_required
 def google_fit_callback(request):
     try:
@@ -390,8 +391,7 @@ def google_fit_callback(request):
 
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {e}")
-        return redirect('dashboard')
-@login_required
+        return redirect('dashboard')@login_required
 def fetch_google_fit_data(request):
     try:
         token_obj = GoogleFitToken.objects.get(user=request.user)
