@@ -355,6 +355,7 @@ def google_fit_callback(request):
 # In core/views.py
 # In core/views.py
 # In core/views.py
+# In core/views.py
 @login_required
 def fetch_google_fit_data(request):
     try:
@@ -364,7 +365,6 @@ def fetch_google_fit_data(request):
         headers = {'Authorization': f'Bearer {token_obj.access_token}'}
 
         # --- FETCH THE LATEST HEART RATE ENTRY ---
-        # Define a small time window to find the most recent entry
         now = datetime.datetime.now(datetime.timezone.utc)
         end_time_millis = int(now.timestamp() * 1000)
         start_time_millis = int((now - datetime.timedelta(minutes=30)).timestamp() * 1000)
@@ -380,18 +380,26 @@ def fetch_google_fit_data(request):
         }
 
         response = requests.post(api_url, headers=headers, json=request_body)
+
+        # --- DEBUGGING LOGS ---
+        print("--- FINAL DEBUGGING GOOGLE FIT API CALL ---")
+        print(f"API Response Status: {response.status_code}")
+        print(f"API Response JSON: {response.text}")
+        print("------------------------------------------")
+        # --- END DEBUGGING LOGS ---
+
         response.raise_for_status()
 
         data = response.json()
         latest_heart_rate = None
 
         if data.get('bucket'):
-            for bucket in reversed(data['bucket']): # Check buckets from newest to oldest
+            for bucket in reversed(data['bucket']):
                 if bucket.get('dataset'):
                     dataset = bucket['dataset'][0]
                     if dataset.get('point'):
                         latest_heart_rate = dataset['point'][-1]['value'][0]['fpVal']
-                        break # Found the latest, so we exit the loop
+                        break
 
         if latest_heart_rate:
             profile = StudentProfile.objects.get(user=request.user)
