@@ -32,7 +32,25 @@ def create_client_secrets_dict():
             "token_uri": "https://oauth2.googleapis.com/token"
         }
     }
+# In core/views.py
+def register(request):
+    if request.method == 'POST':
+        form = UserRegistrationForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            if User.objects.filter(email=email).exists():
+                messages.error(request, "An account with this email already exists. Please log in.")
+                return redirect('login')
 
+            otp_code = str(random.randint(100000, 999999))
+            OTP.objects.update_or_create(email=email, defaults={'otp': otp_code})
+            send_otp_email(email, otp_code)
+            request.session['email'] = email
+            messages.success(request, "An OTP has been sent to your email. Please verify.")
+            return redirect('otp_verification')
+    else:
+        form = UserRegistrationForm()
+    return render(request, 'core/register.html', {'form': form})
 def refresh_google_fit_token(token_obj):
     credentials_dict = {
         'token': token_obj.access_token,
