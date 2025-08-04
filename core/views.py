@@ -185,13 +185,14 @@ def profile_setup(request):
         form = ProfileSetupForm()
     return render(request, 'core/profile_setup.html', {'form': form})
 
+# In core/views.py
 @login_required
 def dashboard(request):
     try:
         profile = request.user.studentprofile
     except StudentProfile.DoesNotExist:
         return redirect('profile_setup')
-    
+
     latest_vitals = VitalsSubmission.objects.filter(student_profile=profile).order_by('-submission_date').first()
     context = {
         'profile': profile,
