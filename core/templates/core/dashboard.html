@@ -14,12 +14,15 @@
                             <div class="card-body">
                                 <ul class="list-group list-group-flush">
                                     <li class="list-group-item"><strong>Age:</strong> {{ profile.age }}</li>
-                                    <li class="list-group-item"><strong>Gender:</strong> {{ profile.get_gender_display }}</li>
+                                    <li class="list-group-item"><strong>Gender:</strong> {{ profile.get_gender_display
+                                        }}</li>
                                     <li class="list-group-item"><strong>School:</strong> {{ profile.school_name }}</li>
                                     <li class="list-group-item"><strong>Height:</strong> {{ profile.height }} cm</li>
                                     <li class="list-group-item"><strong>Weight:</strong> {{ profile.weight }} kg</li>
-                                    <li class="list-group-item"><strong>Pre-existing Diseases:</strong> {{ profile.pre_existing_diseases|default:"None" }}</li>
-                                    <li class="list-group-item"><strong>Contact:</strong> {{ profile.contact_number }}</li>
+                                    <li class="list-group-item"><strong>Pre-existing Diseases:</strong> {{
+                                        profile.pre_existing_diseases|default:"None" }}</li>
+                                    <li class="list-group-item"><strong>Contact:</strong> {{ profile.contact_number }}
+                                    </li>
                                     <li class="list-group-item"><strong>Email:</strong> {{ profile.email }}</li>
                                 </ul>
                             </div>
@@ -32,27 +35,32 @@
                             </div>
                             <div class="card-body">
                                 {% if latest_vitals %}
-                                    <ul class="list-group list-group-flush">
-                                        <li class="list-group-item"><strong>Heart Rate:</strong> {{ latest_vitals.heart_rate }} bpm</li>
-                                        <li class="list-group-item"><strong>SpO₂:</strong> {{ latest_vitals.spo2 }}%</li>
-                                        <li class="list-group-item"><strong>Temperature:</strong> {{ latest_vitals.temperature }} °F</li>
-                                        <li class="list-group-item"><strong>Respiration Rate:</strong> {{ latest_vitals.respiration_rate|default:"N/A" }}</li>
-                                        <li class="list-group-item"><strong>Submission Date:</strong> {{ latest_vitals.submission_date|date:"F d, Y P" }}</li>
-                                        <li class="list-group-item">
-                                            <strong>Health Status:</strong>
-                                            <span class="badge rounded-pill bg-{% if latest_vitals.health_status == 'Healthy' %}success{% else %}danger{% endif %}">
-                                                {{ latest_vitals.health_status }}
-                                            </span>
-                                        </li>
-                                    </ul>
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item"><strong>Heart Rate:</strong> {{ latest_vitals.heart_rate
+                                        }} bpm</li>
+                                    <li class="list-group-item"><strong>SpO₂:</strong> {{ latest_vitals.spo2 }}%</li>
+                                    <li class="list-group-item"><strong>Temperature:</strong> {{
+                                        latest_vitals.temperature }} °F</li>
+                                    <li class="list-group-item"><strong>Respiration Rate:</strong> {{
+                                        latest_vitals.respiration_rate|default:"N/A" }}</li>
+                                    <li class="list-group-item"><strong>Submission Date:</strong> {{
+                                        latest_vitals.submission_date|date:"F d, Y P" }}</li>
+                                    <li class="list-group-item">
+                                        <strong>Health Status:</strong>
+                                        <span
+                                            class="badge rounded-pill bg-{% if latest_vitals.health_status == 'Healthy' %}success{% else %}danger{% endif %}">
+                                            {{ latest_vitals.health_status }}
+                                        </span>
+                                    </li>
+                                </ul>
                                 {% else %}
-                                    <p class="text-muted text-center mt-3">No vitals submitted yet.</p>
+                                <p class="text-muted text-center mt-3">No vitals submitted yet.</p>
                                 {% endif %}
                                 <div class="mt-4 text-center">
-                                    <a href="{% url 'submit_vitals' %}" class="btn btn-primary btn-hover-effect">Submit Vitals</a>
-                                </div>
-                                <div>
-                                    <a href="{% url 'fetch_google_fit_data' %}" class="btn btn-info btn-hover-effect ms-3">Fetch Vitals from Google Fit</a>
+                                    <a href="{% url 'submit_vitals' %}" class="btn btn-primary btn-hover-effect">Submit
+                                        Vitals</a>
+                                    <a href="{% url 'fetch_google_fit_data' %}"
+                                        class="btn btn-info btn-hover-effect ms-3">Fetch Vitals from Google Fit</a>
                                 </div>
                             </div>
                         </div>
