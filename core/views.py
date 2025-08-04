@@ -1,14 +1,12 @@
 from django.shortcuts import render, redirect
 from django.core.mail import send_mail
 from django.contrib import messages
-from django.contrib.auth import login, authenticate # Add authenticate here
-
 from django.conf import settings
-from django.contrib.auth import login
+from django.contrib.auth import login, authenticate, get_user_model
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib.auth.models import User
-from .forms import AdminRegistrationForm, UserRegistrationForm, OTPVerificationForm, ProfileSetupForm, VitalsSubmissionForm, AdminLoginForm
-from .models import AdminVerificationCode, GoogleFitToken, StudentProfile, VitalsSubmission, OTP
+from django.contrib.auth.hashers import make_password
+from .forms import UserRegistrationForm, OTPVerificationForm, ProfileSetupForm, VitalsSubmissionForm, AdminRegistrationForm, AdminLoginForm
+from .models import GoogleFitToken, StudentProfile, VitalsSubmission, OTP, AdminVerificationCode
 import smtplib
 from email.mime.text import MIMEText
 import ssl
@@ -20,28 +18,67 @@ from google_auth_oauthlib.flow import Flow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 import logging
-from django.contrib.auth import get_user_model
-# In core/views.py
-from django.contrib.auth.hashers import make_password
-# ... other imports
-
-
-
-User = get_user_model()
-
 
 logger = logging.getLogger(__name__)
+User = get_user_model()
 
+def create_client_secrets_dict():
+    return {
+        "web": {
+            "client_id": settings.GOOGLE_CLIENT_ID,
+            "client_secret": settings.GOOGLE_CLIENT_SECRET,
+            "redirect_uris": [settings.GOOGLE_REDIRECT_URI],
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token"
+        }
+    }
 
+def refresh_google_fit_token(token_obj):
+    credentials_dict = {
+        'token': token_obj.access_token,
+        'refresh_token': token_obj.refresh_token,
+        'token_uri': token_obj.token_uri,
+        'client_id': token_obj.client_id,
+        'client_secret': token_obj.client_secret,
+        'scopes': token_obj.scopes.split(' '),
+        'expiry': token_obj.expires_in,
+    }
+    credentials = Credentials(**credentials_dict)
 
-# In core/views.py, replace the current `login_view` with this `home` view
-# In core/views.py, find the home view
+    if credentials.expiry and (credentials.expiry - datetime.timedelta(minutes=5) < datetime.datetime.now(datetime.timezone.utc)):
+        request = Request()
+        credentials.refresh(request)
+        token_obj.access_token = credentials.token
+        token_obj.expires_in = credentials.expiry
+        token_obj.save()
+        return token_obj
+    else:
+        return token_obj
+
+def send_otp_email(email, otp):
+    subject = "MedTek - Your OTP for Login"
+    message = f"Hello,\n\nYour One-Time Password (OTP) for MedTek is: {otp}\n\nThis OTP is valid for 5 minutes."
+    email_from = settings.EMAIL_HOST_USER
+    recipient_list = [email]
+
+    try:
+        context = ssl.create_default_context()
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+        with smtplib.SMTP_SSL(settings.EMAIL_HOST, 465, context=context) as server:
+            server.login(email_from, settings.EMAIL_HOST_PASSWORD)
+            msg = MIMEText(message)
+            msg['Subject'] = subject
+            msg['From'] = email_from
+            msg['To'] = email
+            server.sendmail(email_from, recipient_list, msg.as_string())
+    except Exception as e:
+        logger.error(f"Failed to send email to {email}: {e}")
+        messages.error(None, "Failed to send email. Please check your email settings.")
+
 def home(request):
     return render(request, 'core/home.html')
-# Now, add the new login and register views
-# In core/views.py, replace the `admin_login` and `admin_register` views with this code
 
-# In core/views.py
 def admin_login(request):
     if request.method == 'POST':
         form = AdminLoginForm(request, data=request.POST)
@@ -49,7 +86,7 @@ def admin_login(request):
             username = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
             user = authenticate(request, username=username, password=password)
-
+            
             if user is not None and user.is_school_staff:
                 login(request, user)
                 messages.success(request, "Logged in as Admin.")
@@ -59,7 +96,7 @@ def admin_login(request):
     else:
         form = AdminLoginForm()
     return render(request, 'core/admin_login.html', {'form': form})
-# In core/views.py
+
 def admin_register(request):
     if request.method == 'POST':
         form = AdminRegistrationForm(request.POST)
@@ -81,87 +118,6 @@ def admin_register(request):
     else:
         form = AdminRegistrationForm()
     return render(request, 'core/admin_register.html', {'form': form})
-# The login view is now for students only
-
-def create_client_secrets_dict():
-    """Creates a client_secrets dictionary from environment variables."""
-    return {
-        "web": {
-            "client_id": settings.GOOGLE_CLIENT_ID,
-            "client_secret": settings.GOOGLE_CLIENT_SECRET,
-            "redirect_uris": [settings.GOOGLE_REDIRECT_URI],
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-            "token_uri": "https://oauth2.googleapis.com/token"
-        }
-    }
-
-def refresh_google_fit_token(token_obj):
-    """
-    Refreshes the Google Fit access token using the refresh token.
-    """
-    credentials_dict = {
-        'token': token_obj.access_token,
-        'refresh_token': token_obj.refresh_token,
-        'token_uri': token_obj.token_uri,
-        'client_id': token_obj.client_id,
-        'client_secret': token_obj.client_secret,
-        'scopes': token_obj.scopes.split(' '),
-        'expiry': token_obj.expires_in,
-    }
-    credentials = Credentials(**credentials_dict)
-
-    if credentials.expiry and (credentials.expiry - datetime.timedelta(minutes=5) < datetime.datetime.now(datetime.timezone.utc)):
-        request = Request()
-        credentials.refresh(request)
-        
-        token_obj.access_token = credentials.token
-        token_obj.expires_in = credentials.expiry
-        token_obj.save()
-        return token_obj
-    else:
-        return token_obj
-
-def send_otp_email(email, otp):
-    subject = "MedTek - Your OTP for Login"
-    message = f"Hello,\n\nYour One-Time Password (OTP) for MedTek is: {otp}\n\nThis OTP is valid for 5 minutes."
-    email_from = settings.EMAIL_HOST_USER
-    recipient_list = [email]
-
-    try:
-        context = ssl.create_default_context()
-        context.check_hostname = False
-        context.verify_mode = ssl.CERT_NONE
-
-        with smtplib.SMTP_SSL(settings.EMAIL_HOST, 465, context=context) as server:
-            server.login(email_from, settings.EMAIL_HOST_PASSWORD)
-            msg = MIMEText(message)
-            msg['Subject'] = subject
-            msg['From'] = email_from
-            msg['To'] = email
-            server.sendmail(email_from, recipient_list, msg.as_string())
-    except Exception as e:
-        logger.error(f"Failed to send email to {email}: {e}")
-        # We don't raise here to allow the user to continue, but an error message is good
-        messages.error(None, "Failed to send email. Please check your email settings.")
-
-def register(request):
-    if request.method == 'POST':
-        form = UserRegistrationForm(request.POST)
-        if form.is_valid():
-            email = form.cleaned_data['email']
-            if User.objects.filter(email=email).exists():
-                messages.error(request, "An account with this email already exists. Please log in.")
-                return redirect('login')
-            
-            otp_code = str(random.randint(100000, 999999))
-            OTP.objects.update_or_create(email=email, defaults={'otp': otp_code})
-            send_otp_email(email, otp_code)
-            request.session['email'] = email
-            messages.success(request, "An OTP has been sent to your email. Please verify.")
-            return redirect('otp_verification')
-    else:
-        form = UserRegistrationForm()
-    return render(request, 'core/register.html', {'form': form})
 
 def login_view(request):
     if request.user.is_authenticated:
@@ -278,16 +234,11 @@ def result(request, vitals_id):
     vitals = VitalsSubmission.objects.get(id=vitals_id)
     return render(request, 'core/result.html', {'vitals': vitals})
 
-def is_superuser(user):
-    return user.is_superuser
-
-# In core/views.py, update the decorator for the admin_dashboard view
 def is_school_staff(user):
     return user.is_school_staff
 
 @user_passes_test(is_school_staff)
 def admin_dashboard(request):
-    
     students = StudentProfile.objects.all().order_by('name')
     health_status_filter = request.GET.get('health_status')
 
@@ -341,8 +292,6 @@ def google_fit_auth(request):
     request.session['oauth_state'] = state
     return redirect(authorization_url)
 
-# In core/views.py
-# In core/views.py
 @login_required
 def google_fit_callback(request):
     try:
@@ -373,7 +322,6 @@ def google_fit_callback(request):
             else:
                 scopes_str = ' '.join(credentials.scopes)
 
-        # FIX: Save all credentials to the database
         GoogleFitToken.objects.update_or_create(
             user=request.user,
             defaults={
@@ -388,10 +336,12 @@ def google_fit_callback(request):
         )
         messages.success(request, "Google Fit connected successfully!")
         return redirect('dashboard')
-
+    
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {e}")
-        return redirect('dashboard')@login_required
+        return redirect('dashboard')
+
+@login_required
 def fetch_google_fit_data(request):
     try:
         token_obj = GoogleFitToken.objects.get(user=request.user)
