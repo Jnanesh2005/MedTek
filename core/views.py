@@ -1,12 +1,8 @@
-from django.shortcuts import render
-
-# Create your views here.
-import random
 from django.shortcuts import render, redirect
 from django.core.mail import send_mail
 from django.contrib import messages
 from django.conf import settings
-from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from .forms import UserRegistrationForm, OTPVerificationForm, ProfileSetupForm, VitalsSubmissionForm
@@ -15,11 +11,15 @@ import smtplib
 from email.mime.text import MIMEText
 import ssl
 import random
-from google_auth_oauthlib.flow import Flow
-from google.auth.transport.requests import Request
 import datetime
 import json
 import requests
+from google_auth_oauthlib.flow import Flow
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+import logging
+
+logger = logging.getLogger(__name__)
 
 def create_client_secrets_dict():
     """Creates a client_secrets dictionary from environment variables."""
@@ -32,18 +32,11 @@ def create_client_secrets_dict():
             "token_uri": "https://oauth2.googleapis.com/token"
         }
     }
-# In core/views.py, with other helper functions
-# In core/views.py, with other helper functions
+
 def refresh_google_fit_token(token_obj):
     """
     Refreshes the Google Fit access token using the refresh token.
     """
-    from google.oauth2.credentials import Credentials
-    from google_auth_oauthlib.flow import Flow
-    from google.auth.transport.requests import Request
-    import requests
-    import datetime
-
     credentials_dict = {
         'token': token_obj.access_token,
         'refresh_token': token_obj.refresh_token,
@@ -53,21 +46,19 @@ def refresh_google_fit_token(token_obj):
         'scopes': token_obj.scopes.split(' '),
         'expiry': token_obj.expires_in,
     }
-
     credentials = Credentials(**credentials_dict)
 
-    # FIX: Check if the token is about to expire, using timezone-aware datetimes
     if credentials.expiry and (credentials.expiry - datetime.timedelta(minutes=5) < datetime.datetime.now(datetime.timezone.utc)):
         request = Request()
         credentials.refresh(request)
-
-        # Update the token object in the database
+        
         token_obj.access_token = credentials.token
         token_obj.expires_in = credentials.expiry
         token_obj.save()
         return token_obj
     else:
         return token_obj
+
 def send_otp_email(email, otp):
     subject = "MedTek - Your OTP for Login"
     message = f"Hello,\n\nYour One-Time Password (OTP) for MedTek is: {otp}\n\nThis OTP is valid for 5 minutes."
@@ -75,25 +66,21 @@ def send_otp_email(email, otp):
     recipient_list = [email]
 
     try:
-        # Create a non-verifying SSL context
         context = ssl.create_default_context()
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE
 
         with smtplib.SMTP_SSL(settings.EMAIL_HOST, 465, context=context) as server:
             server.login(email_from, settings.EMAIL_HOST_PASSWORD)
-
             msg = MIMEText(message)
             msg['Subject'] = subject
             msg['From'] = email_from
             msg['To'] = email
-
             server.sendmail(email_from, recipient_list, msg.as_string())
-        print(f"OTP email sent successfully to {email}")
-
     except Exception as e:
-        print(f"Failed to send email: {e}")
-        raise # Re-raise the exception to see it in Django's traceback
+        logger.error(f"Failed to send email to {email}: {e}")
+        # We don't raise here to allow the user to continue, but an error message is good
+        messages.error(None, "Failed to send email. Please check your email settings.")
 
 def register(request):
     if request.method == 'POST':
@@ -149,9 +136,7 @@ def otp_verification(request):
             otp_entered = form.cleaned_data['otp']
             try:
                 otp_obj = OTP.objects.get(email=email, otp=otp_entered)
-                # You might add a timestamp check here for expiration
                 otp_obj.delete()
-
                 user, created = User.objects.get_or_create(username=email, email=email)
                 login(request, user)
                 
@@ -169,7 +154,7 @@ def otp_verification(request):
 @login_required
 def profile_setup(request):
     if hasattr(request.user, 'studentprofile'):
-        return redirect('dashboard') # Already set up
+        return redirect('dashboard')
     
     if request.method == 'POST':
         form = ProfileSetupForm(request.POST)
@@ -185,21 +170,20 @@ def profile_setup(request):
         form = ProfileSetupForm()
     return render(request, 'core/profile_setup.html', {'form': form})
 
-# In core/views.py
-# In core/views.py
 @login_required
 def dashboard(request):
     try:
         profile = request.user.studentprofile
     except StudentProfile.DoesNotExist:
         return redirect('profile_setup')
-
+    
     latest_vitals = VitalsSubmission.objects.filter(student_profile=profile).order_by('-submission_date').first()
     context = {
         'profile': profile,
         'latest_vitals': latest_vitals,
     }
     return render(request, 'core/dashboard.html', context)
+
 @login_required
 def vitals_form(request):
     try:
@@ -213,7 +197,6 @@ def vitals_form(request):
             vitals = form.save(commit=False)
             vitals.student_profile = profile
 
-            # Health Check Logic
             status = 'Healthy'
             if vitals.spo2 < settings.HEALTH_CHECK_RULES.get('SPO2_THRESHOLD'):
                 status = 'Unhealthy'
@@ -267,17 +250,15 @@ def admin_dashboard(request):
         })
 
     return render(request, 'core/admin_dashboard.html', {'student_data': student_data})
-# In core/views.py, at the end of the file
+
 @login_required
 def google_fit_auth(request):
-    # Scopes are permissions our app needs from Google
     scopes = [
         'https://www.googleapis.com/auth/fitness.activity.read',
         'https://www.googleapis.com/auth/fitness.body.read',
         'https://www.googleapis.com/auth/fitness.heart_rate.read',
     ]
 
-    # **CORRECTED:** Use the `from_client_config` method
     client_config = create_client_secrets_dict()
     flow = Flow.from_client_config(
         client_config,
@@ -285,20 +266,14 @@ def google_fit_auth(request):
         redirect_uri=settings.GOOGLE_REDIRECT_URI
     )
 
-    # Get the authorization URL to redirect the user
     authorization_url, state = flow.authorization_url(
         access_type='offline',
         include_granted_scopes='true'
     )
 
-    # Store the state in the session to prevent CSRF attacks
     request.session['oauth_state'] = state
     return redirect(authorization_url)
 
-
-# In core/views.py
-# In core/views.py
-# In core/views.py
 @login_required
 def google_fit_callback(request):
     try:
@@ -316,10 +291,12 @@ def google_fit_callback(request):
         )
 
         flow.fetch_token(authorization_response=request.build_absolute_uri())
-
         credentials = flow.credentials
 
-        # A more robust check for scopes
+        if not credentials or not credentials.token:
+            messages.error(request, "Failed to get tokens from Google. Please try again.")
+            return redirect('dashboard')
+
         scopes_str = ''
         if credentials.scopes:
             if isinstance(credentials.scopes, str):
@@ -345,19 +322,7 @@ def google_fit_callback(request):
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {e}")
         return redirect('dashboard')
-# In core/views.py
-# In core/views.py
-# In core/views.py
-# In core/views.py
-# In core/views.py
-# In core/views.py
-# In core/views.py
-# In core/views.py
-# In core/views.py
-# In core/views.py
-# In core/views.py
-# In core/views.py
-# In core/views.py
+
 @login_required
 def fetch_google_fit_data(request):
     try:
@@ -366,7 +331,6 @@ def fetch_google_fit_data(request):
 
         headers = {'Authorization': f'Bearer {token_obj.access_token}'}
 
-        # --- GET AVERAGE HEART RATE OVER 24 HOURS ---
         now = datetime.datetime.now(datetime.timezone.utc)
         end_time_millis = int(now.timestamp() * 1000)
         start_time_millis = int((now - datetime.timedelta(days=1)).timestamp() * 1000)
@@ -376,14 +340,14 @@ def fetch_google_fit_data(request):
             "aggregateBy": [{
                 "dataTypeName": "com.google.heart_rate.bpm"
             }],
-            "bucketByTime": {"durationMillis": 86400000}, # 24 hours in milliseconds
+            "bucketByTime": {"durationMillis": 86400000},
             "startTimeMillis": start_time_millis,
             "endTimeMillis": end_time_millis
         }
 
         response = requests.post(api_url, headers=headers, json=request_body)
         response.raise_for_status()
-
+        
         data = response.json()
         heart_rate = None
 
