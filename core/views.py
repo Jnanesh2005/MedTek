@@ -186,6 +186,7 @@ def profile_setup(request):
     return render(request, 'core/profile_setup.html', {'form': form})
 
 # In core/views.py
+# In core/views.py
 @login_required
 def dashboard(request):
     try:
@@ -199,7 +200,6 @@ def dashboard(request):
         'latest_vitals': latest_vitals,
     }
     return render(request, 'core/dashboard.html', context)
-
 @login_required
 def vitals_form(request):
     try:
