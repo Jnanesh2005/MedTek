@@ -353,6 +353,7 @@ def google_fit_callback(request):
 # In core/views.py
 # In core/views.py
 # In core/views.py
+# In core/views.py
 @login_required
 def fetch_google_fit_data(request):
     try:
@@ -361,52 +362,57 @@ def fetch_google_fit_data(request):
 
         headers = {'Authorization': f'Bearer {token_obj.access_token}'}
 
-        # --- FIND THE LATEST HEART RATE ENTRY ---
         now = datetime.datetime.now(datetime.timezone.utc)
         end_time_millis = int(now.timestamp() * 1000)
         start_time_millis = int((now - datetime.timedelta(days=1)).timestamp() * 1000)
 
-        # Use the aggregate endpoint to get all data points
         api_url = "https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate"
+
         request_body = {
             "aggregateBy": [{
                 "dataTypeName": "com.google.heart_rate.bpm"
             }],
-            "bucketByTime": {"durationMillis": 360000}, # 6 minutes
+            "bucketByTime": {"durationMillis": 86400000}, # 24 hours in milliseconds
             "startTimeMillis": start_time_millis,
             "endTimeMillis": end_time_millis
         }
 
         response = requests.post(api_url, headers=headers, json=request_body)
+
+        # --- DEBUGGING LOGS ---
+        print("--- DEBUGGING GOOGLE FIT API CALL ---")
+        print(f"API Response Status: {response.status_code}")
+        print(f"API Response JSON: {response.text}")
+        print("-------------------------------------")
+        # --- END DEBUGGING LOGS ---
+
         response.raise_for_status()
 
         data = response.json()
-        latest_heart_rate = None
 
-        if data.get('bucket'):
-            datasets = data['bucket'][0].get('dataset', [])
-            if datasets:
-                points = datasets[0].get('point', [])
-                if points:
-                    # Grab the last data point, which is the latest
-                    latest_heart_rate = points[-1]['value'][0]['fpVal']
+        heart_rate = None
+        if data.get('bucket') and data['bucket'][0].get('dataset') and data['bucket'][0]['dataset'][0].get('point'):
+            points = data['bucket'][0]['dataset'][0]['point']
+            if points:
+                heart_rates = [p['value'][0]['fpVal'] for p in points]
+                heart_rate = sum(heart_rates) / len(heart_rates)
 
-        if latest_heart_rate:
+        if heart_rate:
             profile = StudentProfile.objects.get(user=request.user)
             status = 'Healthy'
-            if latest_heart_rate > 100 or latest_heart_rate < 60:
+            if heart_rate > 100 or heart_rate < 60:
                 status = 'Unhealthy'
 
             VitalsSubmission.objects.create(
                 student_profile=profile,
-                heart_rate=int(latest_heart_rate),
+                heart_rate=int(heart_rate),
                 spo2=98,
                 temperature=98.6,
                 health_status=status
             )
-            messages.success(request, f"Latest vitals ({latest_heart_rate} bpm) synced successfully!")
+            messages.success(request, f"24-hour average vitals synced ({int(heart_rate)} bpm)!")
         else:
-            messages.warning(request, "No new heart rate data found in the last 30 minutes.")
+            messages.warning(request, "No heart rate data found for the last 24 hours.")
 
     except GoogleFitToken.DoesNotExist:
         messages.error(request, "Please connect your Google Fit account first.")
