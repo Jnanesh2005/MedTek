@@ -1,12 +1,14 @@
 from django.shortcuts import render, redirect
 from django.core.mail import send_mail
 from django.contrib import messages
+from django.contrib.auth import login, authenticate # Add authenticate here
+
 from django.conf import settings
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
-from .forms import UserRegistrationForm, OTPVerificationForm, ProfileSetupForm, VitalsSubmissionForm
-from .models import GoogleFitToken, StudentProfile, VitalsSubmission, OTP
+from .forms import AdminRegistrationForm, UserRegistrationForm, OTPVerificationForm, ProfileSetupForm, VitalsSubmissionForm, AdminLoginForm
+from .models import AdminVerificationCode, GoogleFitToken, StudentProfile, VitalsSubmission, OTP
 import smtplib
 from email.mime.text import MIMEText
 import ssl
@@ -18,8 +20,68 @@ from google_auth_oauthlib.flow import Flow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 import logging
+from django.contrib.auth import get_user_model
+# In core/views.py
+from django.contrib.auth.hashers import make_password
+# ... other imports
+
+
+
+User = get_user_model()
+
 
 logger = logging.getLogger(__name__)
+
+
+
+# In core/views.py, replace the current `login_view` with this `home` view
+# In core/views.py, find the home view
+def home(request):
+    return render(request, 'core/home.html')
+# Now, add the new login and register views
+# In core/views.py, replace the `admin_login` and `admin_register` views with this code
+
+# In core/views.py
+def admin_login(request):
+    if request.method == 'POST':
+        form = AdminLoginForm(request, data=request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(request, username=username, password=password)
+
+            if user is not None and user.is_school_staff:
+                login(request, user)
+                messages.success(request, "Logged in as Admin.")
+                return redirect('admin_dashboard')
+            else:
+                messages.error(request, "Invalid username or password, or this account is not a staff member.")
+    else:
+        form = AdminLoginForm()
+    return render(request, 'core/admin_login.html', {'form': form})
+# In core/views.py
+def admin_register(request):
+    if request.method == 'POST':
+        form = AdminRegistrationForm(request.POST)
+        if form.is_valid():
+            verification_code = form.cleaned_data['verification_code']
+            password = form.cleaned_data['password']
+            try:
+                code_obj = AdminVerificationCode.objects.get(code=verification_code, is_used=False)
+                user = form.save(commit=False)
+                user.is_school_staff = True
+                user.password = make_password(password)
+                user.save()
+                code_obj.is_used = True
+                code_obj.save()
+                messages.success(request, "Admin account created successfully! Please log in.")
+                return redirect('admin_login')
+            except AdminVerificationCode.DoesNotExist:
+                messages.error(request, "Invalid or already used verification code.")
+    else:
+        form = AdminRegistrationForm()
+    return render(request, 'core/admin_register.html', {'form': form})
+# The login view is now for students only
 
 def create_client_secrets_dict():
     """Creates a client_secrets dictionary from environment variables."""
@@ -219,8 +281,13 @@ def result(request, vitals_id):
 def is_superuser(user):
     return user.is_superuser
 
-@user_passes_test(is_superuser)
+# In core/views.py, update the decorator for the admin_dashboard view
+def is_school_staff(user):
+    return user.is_school_staff
+
+@user_passes_test(is_school_staff)
 def admin_dashboard(request):
+    
     students = StudentProfile.objects.all().order_by('name')
     health_status_filter = request.GET.get('health_status')
 

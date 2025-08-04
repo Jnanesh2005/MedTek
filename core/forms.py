@@ -1,5 +1,6 @@
 from django import forms
 from .models import StudentProfile, VitalsSubmission, User
+from django.contrib.auth.forms import AuthenticationForm
 
 class UserRegistrationForm(forms.Form):
     email = forms.EmailField(label="Email", required=True)
@@ -28,3 +29,15 @@ class VitalsSubmissionForm(forms.ModelForm):
     class Meta:
         model = VitalsSubmission
         fields = ['heart_rate', 'spo2', 'temperature', 'respiration_rate']
+        # In core/forms.py, at the bottom
+# In core/forms.py
+class AdminRegistrationForm(forms.ModelForm):
+    password = forms.CharField(label="Password", widget=forms.PasswordInput)
+    verification_code = forms.CharField(max_length=20, label="Verification Code", required=True)
+
+    class Meta:
+        model = User
+        fields = ['username', 'email']
+
+class AdminLoginForm(AuthenticationForm):
+    pass
