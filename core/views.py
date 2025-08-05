@@ -311,6 +311,7 @@ def google_fit_auth(request):
     return redirect(authorization_url)
 
 # In core/views.py
+# In core/views.py
 @login_required
 def google_fit_callback(request):
     try:
@@ -334,14 +335,9 @@ def google_fit_callback(request):
             messages.error(request, "Failed to get tokens from Google. Please try again.")
             return redirect('dashboard')
 
-        scopes_str = ''
-        if credentials.scopes:
-            if isinstance(credentials.scopes, str):
-                scopes_str = credentials.scopes
-            else:
-                scopes_str = ' '.join(credentials.scopes)
+        scopes_str = ' '.join(list(credentials.scopes)) if credentials.scopes else ''
 
-        # FIX: Save all credentials to the database
+        # The credentials object has all the fields. Let's save them correctly.
         GoogleFitToken.objects.update_or_create(
             user=request.user,
             defaults={
@@ -356,11 +352,10 @@ def google_fit_callback(request):
         )
         messages.success(request, "Google Fit connected successfully!")
         return redirect('dashboard')
-
+    
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {e}")
         return redirect('dashboard')
-
 @login_required
 def fetch_google_fit_data(request):
     try:
