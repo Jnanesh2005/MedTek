@@ -78,6 +78,25 @@ def send_otp_email(email, otp):
 
 def home(request):
     return render(request, 'core/home.html')
+# In core/views.py
+def register(request):
+    if request.method == 'POST':
+        form = UserRegistrationForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            if User.objects.filter(email=email).exists():
+                messages.error(request, "An account with this email already exists. Please log in.")
+                return redirect('login')
+
+            otp_code = str(random.randint(100000, 999999))
+            OTP.objects.update_or_create(email=email, defaults={'otp': otp_code})
+            send_otp_email(email, otp_code)
+            request.session['email'] = email
+            messages.success(request, "An OTP has been sent to your email. Please verify.")
+            return redirect('otp_verification')
+    else:
+        form = UserRegistrationForm()
+    return render(request, 'core/register.html', {'form': form})
 
 def admin_login(request):
     if request.method == 'POST':
