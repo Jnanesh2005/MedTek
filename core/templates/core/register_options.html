@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center text-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card mt-5 p-4">
+            <h3 class="mb-4">Register for MedTek</h3>
+            <p class="text-muted">Choose your role to create an account.</p>
+            <div class="d-grid gap-3 mt-4">
+                <a href="{% url 'student_register' %}" class="btn btn-primary btn-lg">Register as Student</a>
+                <a href="{% url 'admin_register' %}" class="btn btn-success btn-lg">Register as School Staff</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

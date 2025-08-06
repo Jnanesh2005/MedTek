@@ -255,6 +255,12 @@ def result(request, vitals_id):
 
 def is_school_staff(user):
     return user.is_school_staff
+# In core/views.py, at the end of the file
+def login_options(request):
+    return render(request, 'core/login_options.html')
+
+def register_options(request):
+    return render(request, 'core/register_options.html')
 
 @user_passes_test(is_school_staff)
 def admin_dashboard(request):
