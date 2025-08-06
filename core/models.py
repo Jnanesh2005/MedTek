@@ -50,7 +50,8 @@ class GoogleFitToken(models.Model):
     token_uri = models.CharField(max_length=255, null=True, blank=True)
     client_id = models.CharField(max_length=255)
     client_secret = models.CharField(max_length=255)
-    scopes = models.TextField(null=True, blank=True)    expires_in = models.DateTimeField()
+    scopes = models.TextField(null=True, blank=True)    
+    expires_in = models.DateTimeField()
 
     def __str__(self):
         return f"Token for {self.user.username}"
