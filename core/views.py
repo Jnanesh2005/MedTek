@@ -78,7 +78,7 @@ def send_otp_email(email, otp):
 
 def home(request):
     return render(request, 'core/home.html')
-# In core/views.py
+
 def register(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
@@ -87,7 +87,7 @@ def register(request):
             if User.objects.filter(email=email).exists():
                 messages.error(request, "An account with this email already exists. Please log in.")
                 return redirect('login')
-
+            
             otp_code = str(random.randint(100000, 999999))
             OTP.objects.update_or_create(email=email, defaults={'otp': otp_code})
             send_otp_email(email, otp_code)
@@ -334,19 +334,17 @@ def google_fit_callback(request):
             messages.error(request, "Failed to get tokens from Google. Please try again.")
             return redirect('dashboard')
 
-        scopes_str = ' '.join(list(credentials.scopes)) if credentials.scopes else ''
+        scopes_str = ' '.join(credentials.scopes) if isinstance(credentials.scopes, list) else credentials.scopes
 
         GoogleFitToken.objects.update_or_create(
             user=request.user,
             defaults={
                 'access_token': credentials.token,
-                'refresh_token': credentials.refresh_token,
                 'token_uri': credentials.token_uri,
                 'client_id': credentials.client_id,
                 'client_secret': credentials.client_secret,
                 'scopes': scopes_str,
-                'expires_in': credentials.expiry,
-            }
+                'expires_in': credentials.expiry.replace(tzinfo=datetime.timezone.utc),            }
         )
         messages.success(request, "Google Fit connected successfully!")
         return redirect('dashboard')
@@ -359,7 +357,6 @@ def google_fit_callback(request):
 def fetch_google_fit_data(request):
     try:
         token_obj = GoogleFitToken.objects.get(user=request.user)
-        token_obj = refresh_google_fit_token(token_obj)
 
         headers = {'Authorization': f'Bearer {token_obj.access_token}'}
 
@@ -379,7 +376,7 @@ def fetch_google_fit_data(request):
 
         response = requests.post(api_url, headers=headers, json=request_body)
         response.raise_for_status()
-        
+
         data = response.json()
         heart_rate = None
 
