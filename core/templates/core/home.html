@@ -1,34 +1,29 @@
 {% extends 'base.html' %}
 {% block content %}
 <style>
-    .hero-section {
+    .hero {
+        min-height: 85vh;
         display: flex;
         align-items: center;
         justify-content: center;
-        height: 85vh;
-        color: white;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
         text-align: center;
     }
-    .hero-title {
+    .hero h1 {
         font-size: 4rem;
         font-weight: 700;
     }
-    .hero-subtitle {
-        font-size: 1.5rem;
-        font-weight: 400;
-        margin-bottom: 2rem;
-    }
 </style>
-<div class="hero-section">
-    <div>
-        <h1 class="hero-title animate__animated animate__fadeInDown">MedTek: Student Health Monitoring</h1>
-        <p class="hero-subtitle animate__animated animate__fadeInUp animate__delay-1s">
-            Your health is our priority.
-        </p>
-        <div class="d-grid gap-3 d-md-block animate__animated animate__fadeInUp animate__delay-2s">
-            <a href="{% url 'login' %}" class="btn btn-primary btn-lg">Student Login</a>
-            <a href="{% url 'admin_login' %}" class="btn btn-success btn-lg">School Staff Login</a>
+<div class="hero">
+    <div class="row">
+        <div class="col-12">
+            <h1>MedTek: Student Health Monitoring</h1>
+            <p class="lead mt-3">
+                Your trusted platform for student health and wellness.
+            </p>
+            <div class="d-grid gap-3 d-sm-flex justify-content-sm-center mt-5">
+                <a href="{% url 'login' %}" class="btn btn-primary btn-lg px-4 gap-3">Get Started</a>
+                <a href="{% url 'about' %}" class="btn btn-outline-secondary btn-lg px-4">Learn More</a>
+            </div>
         </div>
     </div>
 </div>

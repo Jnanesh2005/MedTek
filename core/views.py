@@ -261,7 +261,9 @@ def login_options(request):
 
 def register_options(request):
     return render(request, 'core/register_options.html')
-
+# In core/views.py, add at the end of the file
+def about(request):
+    return render(request, 'core/about.html')
 @user_passes_test(is_school_staff)
 def admin_dashboard(request):
     students = StudentProfile.objects.all().order_by('name')

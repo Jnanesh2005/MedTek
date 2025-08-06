@@ -3,11 +3,11 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-6 col-lg-5">
-        <div class="card mt-5">
+        <div class="card mt-5 p-4">
             <div class="card-header text-center py-4">
                 <h3 class="mb-0">Submit Your Daily Vitals</h3>
             </div>
-            <div class="card-body p-4">
+            <div class="card-body">
                 <form method="post" novalidate>
                     {% csrf_token %}
                     {{ form|crispy }}
