@@ -3,6 +3,8 @@ from . import views
 
 urlpatterns = [    
     path('', views.home, name='home'),
+    path('login-options/', views.login_options, name='login'), # We will keep this for now
+
     path('register/', views.register_options, name='register'), # New gateway view
     path('login/', views.login_options, name='login'), # New gateway view
     path('admin-login/', views.admin_login, name='admin_login'),
