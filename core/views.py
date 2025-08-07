@@ -76,14 +76,11 @@ def send_otp_email(email, otp):
         logger.error(f"Failed to send email to {email}: {e}")
         messages.error(None, "Failed to send email. Please check your email settings.")
 
+# In core/views.py
 def home(request):
-    # Redirect to the dashboard if the user is authenticated
     if request.user.is_authenticated:
         return redirect('dashboard')
-
-    # Otherwise, show the login options page
-    return render(request, 'core/login_options.html')
-
+    return render(request, 'core/home.html')
 def register(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
